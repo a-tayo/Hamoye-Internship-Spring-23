@@ -7,6 +7,7 @@ Created on Mon Jun 19 23:05:58 2023
 import streamlit as st
 from joblib import load
 import pandas as pd
+import altair as alt
 
 # title of Streamlit application
 st.title("Prediction of global terrorist attacks")
@@ -2328,14 +2329,16 @@ df_pred["ismultiple"] = df_pred["ismultiple"].apply(lambda x: int(x == "Multiple
 
 if st.button("Get Prediction"):
     # Make predictions using the loaded model
-    print(df_pred.iloc[0])
-    prediction = model.predict(df_pred)
-    print(prediction)
-
-    # Show the prediction result
-    if prediction >= 0.5:
-        st.write(
-            "There is a high chance of success with the given conditions: Caution is advised"
-        )
-    else:
-        st.write("The chance of success is low with the given conditions.")
+    prediction = model.predict_proba(df_pred)
+    out_df = pd.DataFrame(prediction, columns=['Failed', 'Successful']).melt()
+    out_df.columns = ["Category", "Probability"]
+    
+    chart = alt.Chart(out_df).mark_bar(size=50).encode(
+        x= 'Category',
+        y= 'Probability'
+    ).properties(
+        width=100,
+        title='Probability of Success or Failure'
+    )
+    # Rendering the chart in Streamlit
+    st.sidebar.altair_chart(chart, use_container_width=True)
